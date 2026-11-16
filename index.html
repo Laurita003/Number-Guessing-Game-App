@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --error-color: #ef4444;
+            --success-color: #22c55e;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            color: #60a5fa;
+        }
+
+        p.description {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            background-color: #0f172a;
+            color: var(--text-color);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .message {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+
+        .message.error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .message.success {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .message.info {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .stats {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+
+        .history {
+            margin-top: 1rem;
+            background-color: #0f172a;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Number Guessing Game</h1>
+        <p class="description">Erraten Sie die Zahl zwischen 1 und 100!</p>
+
+        <!-- START-BILDSCHIRM (SCHWIERIGKEIT) -->
+        <div id="setup-screen">
+            <div class="form-group">
+                <label for="difficulty">Wählen Sie den Schwierigkeitsgrad:</label>
+                <select id="difficulty">
+                    <option value="10">Leicht (10 Versuche)</option>
+                    <option value="7" selected>Normal (7 Versuche)</option>
+                    <option value="5">Schwer (5 Versuche)</option>
+                </select>
+            </div>
+            <button id="start-btn">Spiel starten</button>
+        </div>
+
+        <!-- SPIEL-BILDSCHIRM -->
+        <div id="game-screen" class="hidden">
+            <div class="stats">
+                Verbleibende Versuche: <span id="attempts-left">7</span>/<span id="max-attempts">7</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="guess-input">Geben Sie eine Zahl ein:</label>
+                <input type="number" id="guess-input" min="1" max="100" placeholder="Zahl zwischen 1 und 100">
+            </div>
+            <button id="guess-btn">Vorschlag prüfen</button>
+
+            <div id="game-message" class="message hidden"></div>
+
+            <div class="stats" style="margin-top: 1.5rem; text-align: left;">Bisherige Versuche:</div>
+            <div id="history-box" class="history">Keine Versuche bisher.</div>
+        </div>
+
+        <!-- END-BILDSCHIRM (NOCHMAL SPIELEN) -->
+        <div id="end-screen" class="hidden">
+            <div id="end-message" class="message"></div>
+            <button id="restart-btn" style="margin-top: 1.5rem;">Nochmal spielen</button>
+        </div>
+    </div>
+
+    <script>
+        // Variablen für den Spielzustand
+        let secretNum = 0;
+        let maxTries = 7;
+        let remainingTries = 7;
+        let history = [];
+
+        // DOM-Elemente
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        
+        const difficultySelect = document.getElementById('difficulty');
+        const startBtn = document.getElementById('start-btn');
+        const guessInput = document.getElementById('guess-input');
+        const guessBtn = document.getElementById('guess-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const attemptsLeftSpan = document.getElementById('attempts-left');
+        const maxAttemptsSpan = document.getElementById('max-attempts');
+        const gameMessage = document.getElementById('game-message');
+        const historyBox = document.getElementById('history-box');
+        const endMessage = document.getElementById('end-message');
+
+        // Spiel starten
+        startBtn.addEventListener('click', () => {
+            maxTries = parseInt(difficultySelect.value);
+            remainingTries = maxTries;
+            secretNum = Math.floor(Math.random() * 100) + 1;
+            history = [];
+
+            attemptsLeftSpan.textContent = remainingTries;
+            maxAttemptsSpan.textContent = maxTries;
+            guessInput.value = '';
+            gameMessage.classList.add('hidden');
+            historyBox.textContent = 'Keine Versuche bisher.';
+
+            setupScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            endScreen.classList.add('hidden');
+            guessInput.focus();
+        });
+
+        // Vorschlag prüfen
+        guessBtn.addEventListener('click', handleGuess);
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleGuess();
+        });
+
+        function handleGuess() {
+            const val = guessInput.value.trim();
+            if (val === '') return;
+
+            const guess = parseInt(val);
+
+            // Validierung (verbraucht keinen Versuch bei Fehlern)
+            if (isNaN(guess)) {
+                showMessage("Fehler: Bitte geben Sie eine gültige ganze Zahl ein. (Dieser Fehler verbraucht keinen Versuch).", "error");
+                return;
+            }
+
+            if (guess < 1 || guess > 100) {
+                showMessage("Fehler: Die Zahl muss zwischen 1 und 100 liegen. (Dieser Fehler verbraucht keinen Versuch).", "error");
+                return;
+            }
+
+            // Zur Historie hinzufügen
+            history.push(guess);
+            historyBox.textContent = history.join(', ');
+
+            // Vergleich
+            if (guess === secretNum) {
+                endGame(true);
+            } else if (guess < secretNum) {
+                remainingTries--;
+                attemptsLeftSpan.textContent = remainingTries;
+                if (remainingTries === 0) {
+                    endGame(false);
+                } else {
+                    showMessage("Too Low (Zu niedrig)!", "info");
+                }
+            } else {
+                remainingTries--;
+                attemptsLeftSpan.textContent = remainingTries;
+                if (remainingTries === 0) {
+                    endGame(false);
+                } else {
+                    showMessage("Too High (Zu hoch)!", "info");
+                }
+            }
+
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        function showMessage(text, type) {
+            gameMessage.textContent = text;
+            gameMessage.className = `message ${type}`;
+        }
+
+        function endGame(won) {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+
+            if (won) {
+                endMessage.innerHTML = `🎉 Herzlichen Glückwunsch!<br>Sie haben die geheime Zahl <strong>${secretNum}</strong> erfolgreich erraten!`;
+                endMessage.className = "message success";
+            } else {
+                endMessage.innerHTML = `❌ Schade! Sie haben alle Ihre Versuche aufgebraucht.<br>Die geheime Zahl lautet: <strong>${secretNum}</strong>`;
+                endMessage.className = "message error";
+            }
+        }
+
+        // Nochmal spielen
+        restartBtn.addEventListener('click', () => {
+            endScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
