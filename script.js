@@ -1,16 +1,12 @@
-// Variablen für den Spielzustand
 let secretNum = 0;
 let maxTries = 7;
 let remainingTries = 7;
 let history = [];
 
-// DOM-Elemente
 const setupScreen = document.getElementById('setup-screen');
 const gameScreen = document.getElementById('game-screen');
 const endScreen = document.getElementById('end-screen');
 
-const difficultySelect = document.getElementById('difficulty');
-const startBtn = document.getElementById('start-btn');
 const guessInput = document.getElementById('guess-input');
 const guessBtn = document.getElementById('guess-btn');
 const restartBtn = document.getElementById('restart-btn');
@@ -21,9 +17,8 @@ const gameMessage = document.getElementById('game-message');
 const historyBox = document.getElementById('history-box');
 const endMessage = document.getElementById('end-message');
 
-// Spiel starten
-startBtn.addEventListener('click', () => {
-    maxTries = parseInt(difficultySelect.value);
+function startGame(tries) {
+    maxTries = tries;
     remainingTries = maxTries;
     secretNum = Math.floor(Math.random() * 100) + 1;
     history = [];
@@ -38,9 +33,8 @@ startBtn.addEventListener('click', () => {
     gameScreen.classList.remove('hidden');
     endScreen.classList.add('hidden');
     guessInput.focus();
-});
+}
 
-// Vorschlag prüfen
 guessBtn.addEventListener('click', handleGuess);
 guessInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleGuess();
@@ -52,7 +46,6 @@ function handleGuess() {
 
     const guess = parseInt(val);
 
-    // Validierung (verbraucht keinen Versuch bei Fehlern)
     if (isNaN(guess)) {
         showMessage("Fehler: Bitte geben Sie eine gültige ganze Zahl ein. (Dieser Fehler verbraucht keinen Versuch).", "error");
         return;
@@ -63,11 +56,9 @@ function handleGuess() {
         return;
     }
 
-    // Zur Historie hinzufügen
     history.push(guess);
     historyBox.textContent = history.join(', ');
 
-    // Vergleich
     if (guess === secretNum) {
         endGame(true);
     } else if (guess < secretNum) {
@@ -110,7 +101,6 @@ function endGame(won) {
     }
 }
 
-// Nochmal spielen
 restartBtn.addEventListener('click', () => {
     endScreen.classList.add('hidden');
     setupScreen.classList.remove('hidden');
